@@ -27,6 +27,7 @@ public sealed class ServerOptions
     public Action? OnShutdownRequested { get; init; }
     /// <summary>Native folder picker supplied by the desktop shell; returns null when cancelled.</summary>
     public Func<Task<string?>>? PickFolder { get; init; }
+    public Func<Task<string?>>? PickProofDestination { get; init; }
     public Func<Task<string?>>? PickCollageDestination { get; init; }
     public Func<int, Task<string?>>? PickVideoDestination { get; init; }
     public bool GenerateSamplesIfEmpty { get; init; } = true;
@@ -267,6 +268,53 @@ public sealed class PicasaServer : IAsyncDisposable
             return J(new { id, rotation });
         });
 
+        api.MapPost("/photos/batch-edit", async (HttpRequest req) =>
+        {
+            var body = await ReadBody(req);
+            if (body["photo_ids"] is not JsonArray { Count: > 0 } items || body["edits"] is not JsonObject { Count: > 0 } patch)
+                return Error(400, "Select photos and at least one adjustment.");
+            var ids = new HashSet<long>();
+            foreach (var item in items)
+            {
+                if (item is not JsonValue value || !value.TryGetValue<long>(out var id) || id <= 0)
+                    return Error(400, "Invalid photo ID.");
+                ids.Add(id);
+            }
+            foreach (var (field, node) in patch)
+            {
+                if (node is not JsonValue value) return Error(400, "Invalid adjustment.");
+                if (field == "effect" && value.TryGetValue<string>(out var name) && EditRecipe.Effects.Contains(name)) continue;
+                if (field is "feeling_lucky" or "redeye" && value.TryGetValue<bool>(out _)) continue;
+                if (value.TryGetValue<double>(out var number) && double.IsFinite(number))
+                {
+                    if (field is "brightness" or "contrast" or "saturation" or "warmth" or "fill_light" or "highlights" or "shadows"
+                        && number is >= -100 and <= 100) continue;
+                    if (field is "denoise" or "clarity" or "detail" or "vignette" && number is >= 0 and <= 100) continue;
+                }
+                return Error(400, "Invalid batch adjustment.");
+            }
+            return BatchResponse(Catalog.ApplyBatchEdits(ids, patch));
+        });
+
+        IResult BatchResponse(Catalog.BatchResult batch)
+        {
+            foreach (var photo in batch.Changes) Images.InvalidateEditedThumbnail(photo.Path);
+            return J(new { updated = batch.Changes.Select(p => new { id = p.Id, edits = p.Edits }),
+                undo_token = batch.UndoToken, skipped = batch.Skipped });
+        }
+        api.MapGet("/photos/batch-undo", () => J(new { undo_token = Catalog.LastBatchToken() }));
+        api.MapPost("/photos/batch-undo", async (HttpRequest req) =>
+        {
+            var token = Str(await ReadBody(req), "token");
+            var result = Catalog.UndoBatch(token);
+            return result is null ? Error(409, "The last batch has changed. Refresh and try again.") : BatchResponse(result);
+        });
+
+        api.MapPost("/photo/{id:long}/pick", (long id) =>
+        {
+            return Catalog.MarkPicked(id) ? J(new { id, is_starred = 1 }) : Error(404, "Photo unavailable.");
+        });
+
         api.MapPost("/photo/{id:long}/save-edit", async (long id, HttpRequest req) =>
         {
             var body = await ReadBody(req);
@@ -449,6 +497,59 @@ public sealed class PicasaServer : IAsyncDisposable
 
             var outPath = await Task.Run(() => Images.RenderCollage(files, width, height, type, bg));
             return J(new { success = true, collage_path = outPath, width, height });
+        });
+
+        api.MapPost("/proofs/export", async (HttpRequest req) =>
+        {
+            var body = await ReadBody(req);
+            if (body["photo_ids"] is not JsonArray { Count: > 0 } items) return Error(400, "Select photos first.");
+            var photos = new List<Photo>();
+            var seen = new HashSet<long>();
+            foreach (var item in items)
+            {
+                if (item is not JsonValue value || !value.TryGetValue<long>(out var id)) return Error(400, "Invalid photo ID.");
+                if (!seen.Add(id)) continue;
+                var photo = Catalog.GetPhoto(id);
+                if (photo is null || !File.Exists(photo.FilePath))
+                    return Error(404, $"Original unavailable: {photo?.Filename ?? id.ToString()}");
+                photos.Add(photo);
+            }
+            if (_options.PickProofDestination is null) return Error(400, "Open the desktop app to save a PDF.");
+            var path = await _options.PickProofDestination();
+            if (path is null) return J(new { cancelled = true });
+            string code = Guid.NewGuid().ToString("N")[..12].ToUpperInvariant();
+            string temp = Path.Combine(Path.GetDirectoryName(path)!, $".{code}.tmp");
+            try
+            {
+                await Task.Run(() => ProofSheet.Write(temp, code, photos, req.HttpContext.RequestAborted));
+                Catalog.SetSetting("proof:" + code, Json.Serialize(photos.Select(p => p.FilePath)));
+                File.Move(temp, path, true);
+                return J(new { code, path, count = photos.Count });
+            }
+            finally { if (File.Exists(temp)) File.Delete(temp); }
+        });
+
+        api.MapPost("/proofs/resolve", async (HttpRequest req) =>
+        {
+            var body = await ReadBody(req);
+            var code = Str(body, "code").Trim().ToUpperInvariant();
+            if (code.Length != 12 || !code.All(Uri.IsHexDigit)) return Error(400, "Enter the sheet code printed on the PDF.");
+            var manifest = Catalog.GetSetting("proof:" + code);
+            if (manifest is null) return Error(404, "This sheet was not found in this library.");
+            var paths = System.Text.Json.JsonSerializer.Deserialize<string[]>(manifest)!;
+            if (body["numbers"] is not JsonArray { Count: > 0 } numbers) return Error(400, "Enter at least one proof number.");
+            var photos = new List<Photo>();
+            var missing = new List<int>();
+            var seen = new HashSet<int>();
+            foreach (var n in numbers)
+            {
+                if (n is not JsonValue value || !value.TryGetValue<int>(out var number) || number < 1 || number > paths.Length)
+                    return Error(400, $"Use numbers from 1 to {paths.Length}.");
+                if (!seen.Add(number)) continue;
+                var photo = Catalog.GetPhotoByPath(paths[number - 1]);
+                if (photo is null) missing.Add(number); else photos.Add(photo);
+            }
+            return J(new { photos, missing });
         });
 
         api.MapGet("/slideshow/export-status", () => J(new { completed = Volatile.Read(ref _completedSlides) }));

@@ -266,7 +266,7 @@ window.Picasa = {
       if (window.PicasaTray) window.PicasaTray.applyFeelingLuckyActive();
     });
     document.getElementById('action-menu-autotune')?.addEventListener('click', () => {
-      if (this.state.currentTab !== 'editor') {
+      if (this.state.currentTab !== 'editor' || window.ComparePicks?.active) {
         const photo = this.state.selectedPhotos[0] || this.state.photos[0];
         if (photo && window.PicasaEditor) window.PicasaEditor.openPhoto(photo);
       }

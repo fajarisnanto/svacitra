@@ -103,6 +103,11 @@ public partial class App : Application
                     var save = new SaveFileDialog { Title = $"Export {count} slides ({length:g})", Filter = "MP4 video (*.mp4)|*.mp4", FileName = "Slideshow.mp4", DefaultExt = ".mp4" };
                     return save.ShowDialog(MainWindow) == true ? save.FileName : null;
                 }),
+                PickProofDestination = async () => await Dispatcher.InvokeAsync(() =>
+                {
+                    var save = new SaveFileDialog { Title = "Export numbered proof sheet", Filter = "PDF document (*.pdf)|*.pdf", FileName = "Photo proofs.pdf", DefaultExt = ".pdf" };
+                    return save.ShowDialog(MainWindow) == true ? save.FileName : null;
+                }),
                 PickCollageDestination = async () => await Dispatcher.InvokeAsync(() =>
                 {
                     var save = new SaveFileDialog { Filter = "JPEG image (*.jpg)|*.jpg", FileName = "Collage.jpg", DefaultExt = ".jpg" };

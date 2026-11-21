@@ -222,7 +222,17 @@ window.PicasaLibrary = {
       if (request !== this.photoRequest) return;
       this.viewport.disconnect();
       this.chunks.clear();
-      let photos = data.photos || [];
+      const photos = data.photos || [];
+      const scope = params.toString();
+      if (this.galleryScope !== scope) {
+        this.rangeAnchor = null;
+        if (this.galleryScope !== undefined && !window.Picasa.state.isHeld) {
+          window.Picasa.state.selectedPhotos = [];
+          window.PicasaTray.updateTrayUI();
+        }
+        this.galleryScope = scope;
+      }
+      this.galleryOrder = [];
 
       window.Picasa.state.photos = photos;
       let headerTitle = 'All Photos';
@@ -274,6 +284,7 @@ window.PicasaLibrary = {
       groups[folder].push(photo);
     });
 
+    this.galleryOrder = Object.values(groups).flat();
     for (const [folderPath, folderPhotos] of Object.entries(groups)) {
       const folderName = folderPath.split(/[\\/]/).pop() || folderPath;
       const firstPhoto = folderPhotos[0];
@@ -325,7 +336,7 @@ window.PicasaLibrary = {
     card.className = `photo-card ${photo.is_starred ? 'is-starred' : ''}`;
     card.dataset.id = photo.id;
 
-    const isSelected = window.Picasa.state.selectedPhotos.some(p => p.id === photo.id);
+    const isSelected = window.PicasaTray.selectedIds.has(photo.id);
     if (isSelected) card.classList.add('selected');
 
     const esc = window.Picasa.escapeHtml;
@@ -335,7 +346,7 @@ window.PicasaLibrary = {
     const safeHover = esc(hoverTitle);
 
     card.innerHTML = `
-      <img src="/api/thumb/${photo.id}" loading="lazy" alt="${safeFilename}">
+      <img src="${this.thumbUrl(photo.id)}" loading="lazy" alt="${safeFilename}">
       ${aiBadge}
       ${photo.offline ? '<span class="offline-badge">Offline</span>' : ''}
       <div class="card-star-badge" title="Toggle Star">${window.PicasaIcons.html('star')}</div>
@@ -357,30 +368,47 @@ window.PicasaLibrary = {
 
     // Single click: select/add to photo tray
     card.addEventListener('click', (e) => {
-      if (e.shiftKey || e.ctrlKey || e.metaKey) {
-        window.PicasaTray.toggleSelect(photo);
+      const tray = window.PicasaTray;
+      const additive = e.ctrlKey || e.metaKey;
+      if (e.shiftKey) {
+        const start = this.galleryOrder.findIndex(p => p.id === this.rangeAnchor);
+        const end = this.galleryOrder.findIndex(p => p.id === photo.id);
+        const anchored = start >= 0 && tray.selectedIds.has(this.rangeAnchor);
+        const range = anchored ? this.galleryOrder.slice(Math.min(start, end), Math.max(start, end) + 1) : [photo];
+        if (!anchored) this.rangeAnchor = photo.id;
+        tray.selectRange(range, additive || window.Picasa.state.isHeld);
       } else {
-        window.PicasaTray.selectSingle(photo);
+        this.rangeAnchor = photo.id;
+        if (additive) tray.toggleSelect(photo);
+        else tray.selectSingle(photo);
       }
     });
 
     // Double click: in classic Google Picasa, double clicking a photo enters the Single Photo Studio (Editor)
     card.addEventListener('dblclick', (e) => {
       e.stopPropagation();
-      window.PicasaEditor.openPhoto(photo);
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey) window.PicasaEditor.openPhoto(photo);
     });
 
     return card;
   },
 
+  thumbVersions: new Map(),
+
+  thumbUrl(id) {
+    const version = this.thumbVersions.get(id);
+    return '/api/thumb/' + id + (version ? '?t=' + version : '');
+  },
+
   updatePhotoInGrid(photo) {
+    this.thumbVersions.set(photo.id, Date.now());
     const stored = window.Picasa.state.photos.find(p => p.id === photo.id);
     if (stored) Object.assign(stored, photo);
     const card = document.querySelector(`.photo-card[data-id="${photo.id}"]`);
     if (card) {
       card.classList.toggle('is-starred', photo.is_starred === 1);
       const img = card.querySelector('img');
-      img.src = `/api/thumb/${photo.id}?t=${Date.now()}`;
+      img.src = this.thumbUrl(photo.id);
       if (photo.ai_processed && !card.querySelector('.card-ai-badge')) {
         const badge = document.createElement('div');
         badge.className = 'card-ai-badge';

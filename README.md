@@ -8,13 +8,26 @@ svacitra is a Windows photo organizer and non-destructive editor by Fajar Isnant
 2. Run svacitra on a 64-bit Windows 10 or 11 PC. The executable includes .NET. The native editing window uses Microsoft Edge WebView2 Evergreen. If the runtime is missing, the app offers a browser option.
 3. Choose **Add Folder** to index a photo folder. Double-click a photo to edit it. **Save Edits** stores the recipe in your catalog. **Export Copy** writes a JPEG with the edits applied.
 
-Version 2.6.0 is unsigned. Windows application-control policies may block the installer or standalone executable. SHA-256 checksums are included on the release page.
+Version 2.7.0 is unsigned. Windows application-control policies may block the installer or standalone executable. SHA-256 checksums are included on the release page.
 
 ## Contact and license
 
 Copyright © 2026 Fajar Isnanto — Jakarta, Indonesia. Contact fajari@gmail.com.
 
 The project is distributed under the [MIT License](LICENSE). See the [disclaimer](DISCLAIMER.txt) for the warranty, original-photo backup and cloud AI notices.
+
+## Select and batch edit photos
+
+Click the first thumbnail and Shift-click the last to select the entire range in gallery order. Shift-click another endpoint to extend or shorten it. Ctrl-click toggles individual photos. Ctrl+Shift-click adds another range. The photo tray shows the selected count.
+
+Choose **Batch edit** above the gallery to set brightness, contrast, saturation, warmth, or an effect. Empty fields keep each photo’s existing settings. Choose **Apply to … photos** to save the adjustments in the catalog. Use **Export** to write edited copies.
+
+## Review a shoot and deliver proofs
+
+- **Compare & Pick** opens the selected sequence side by side in Edit Studio. Click an image to zoom both panes, then drag to inspect the same area. The right arrow advances the challenger. **Keep right photo** makes it the favorite. **Star favorite** saves the pick in Starred Photos.
+- In Edit Studio, expand **Copy selected edits**, choose the adjustments to transfer, and click **Copy for pasting**. Select destination photos in the library, then choose **Paste edits**. The clipboard lasts for this app session.
+- **Undo last batch** restores the recipes from before the most recent Batch edit, Paste edits, or tray Auto-enhance. The latest undo survives restarting the app. A photo edited again after the batch is skipped to preserve that newer edit.
+- Select photos and choose **Export proof PDF**. Each page carries a sheet code and each photo has a number. When the client replies, open **Find proof numbers**, enter the code and numbers, and choose **Select originals**. The catalog remembers each sheet’s original file paths and selection order.
 
 ## Features
 

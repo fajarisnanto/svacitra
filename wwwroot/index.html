@@ -243,11 +243,36 @@
           <span class="scope-badge" id="scope-count">0 items</span>
         </div>
         <div class="filter-toggles">
+          <button class="picasa-btn" id="batch-edit-toggle" aria-controls="batch-edit-panel" aria-expanded="false" hidden>Batch edit</button>
           <button class="chip-filter active" data-chip="all">All</button>
           <button class="chip-filter" data-chip="starred">⭐ Starred</button>
           <button class="chip-filter" data-chip="ai-tagged">🤖 AI Tagged</button>
         </div>
       </div>
+
+      <div class="review-tools" aria-label="Photo selection tools">
+        <button class="picasa-btn" id="compare-picks" disabled>Compare &amp; Pick</button>
+        <button class="picasa-btn" id="paste-edits" hidden>Paste edits</button>
+        <button class="picasa-btn" id="undo-batch" hidden>Undo last batch</button>
+        <button class="picasa-btn" id="export-proofs" disabled>Export proof PDF</button>
+        <button class="picasa-btn" id="find-proofs" aria-expanded="false">Find proof numbers</button>
+        <span id="review-status" role="status"></span>
+      </div>
+      <form id="proof-lookup" class="review-tools" hidden>
+        <label>Sheet code <input id="proof-code" required maxlength="12" size="14"></label>
+        <label>Photo numbers <input id="proof-numbers" required placeholder="12, 18, 41"></label>
+        <button class="picasa-btn" type="submit">Select originals</button>
+      </form>
+
+      <form id="batch-edit-panel" aria-label="Batch adjustments" hidden>
+        <label>Brightness<input name="brightness" type="number" min="-100" max="100" step="1" placeholder="Keep"></label>
+        <label>Contrast<input name="contrast" type="number" min="-100" max="100" step="1" placeholder="Keep"></label>
+        <label>Saturation<input name="saturation" type="number" min="-100" max="100" step="1" placeholder="Keep"></label>
+        <label>Warmth<input name="warmth" type="number" min="-100" max="100" step="1" placeholder="Keep"></label>
+        <label>Effect<select name="effect"><option value="">Keep</option><option value="none">None</option><option value="bw">Black and white</option><option value="sepia">Sepia</option><option value="warmify">Warmify</option><option value="sharpen">Sharpen</option><option value="vignette">Vignette</option></select></label>
+        <button type="submit" class="picasa-btn primary-btn" id="batch-apply">Apply</button>
+        <span id="batch-status" role="status"></span>
+      </form>
 
       <!-- Virtualized / Grouped Photo Gallery Container -->
       <div class="gallery-scroll-container" id="gallery-scroll-area">
@@ -271,6 +296,20 @@
 
   <!-- EDIT STUDIO VIEW (TAB 2) -->
   <div class="picasa-workspace editor-workspace" id="view-editor" style="display: none;">
+    <section id="pick-workspace" hidden aria-label="Compare and pick">
+      <div class="review-tools">
+        <button class="picasa-btn" id="pick-done">Back to library</button>
+        <button class="picasa-btn" id="pick-next">Next challenger →</button>
+        <button class="picasa-btn" id="pick-promote">Keep right photo</button>
+        <button class="picasa-btn primary-btn" id="pick-star">Star favorite</button>
+        <label>Zoom <select id="pick-zoom"><option value="1">Fit</option><option value="2">2×</option><option value="4">4×</option></select></label>
+        <span id="pick-status" role="status"></span>
+      </div>
+      <div class="pick-pair">
+        <figure><figcaption id="pick-left-label">Favorite</figcaption><div class="pick-image" id="pick-left"></div></figure>
+        <figure><figcaption id="pick-right-label">Challenger</figcaption><div class="pick-image" id="pick-right"></div></figure>
+      </div>
+    </section>
     <!-- LEFT 3-TAB EDIT PALETTE -->
     <div class="editor-palette">
       <!-- LUNA AI CREATIVE PROMPT SECTION -->
@@ -522,6 +561,12 @@
         </div>
       </div>
 
+      <details id="copy-edit-panel">
+        <summary>Copy selected edits</summary>
+        <div id="copy-fields"></div>
+        <button class="picasa-btn" id="copy-edit-values">Copy for pasting</button>
+        <span id="copy-status" role="status"></span>
+      </details>
       <!-- EDIT PALETTE FOOTER -->
       <div class="editor-palette-footer">
         <button class="picasa-btn" id="btn-undo-all" title="Revert to original">Undo All Fixes</button>
@@ -623,7 +668,7 @@
   <footer class="picasa-photo-tray">
     <div class="tray-left">
       <div class="tray-controls">
-        <div class="tray-title">PHOTO TRAY</div>
+        <div class="tray-title" id="tray-count" aria-live="polite">Photo tray</div>
         <div class="tray-actions">
           <button class="tray-btn" id="btn-tray-hold" title="Hold selection while browsing other folders">Hold</button>
           <button class="tray-btn" id="btn-tray-clear" title="Clear current tray">Clear</button>
@@ -829,6 +874,8 @@
   <script src="js/app.js"></script>
   <script src="js/library.js"></script>
   <script src="js/photo-tray.js"></script>
+  <script src="js/review.js"></script>
+  <script src="js/compare-picks.js"></script>
   <script src="js/viewer.js"></script>
   <script src="js/photo-design.js"></script>
   <script src="js/editor.js"></script>

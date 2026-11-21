@@ -35,6 +35,7 @@ public class ApiContractTests : IAsyncLifetime
             Paths = new AppPaths(_tmp.Sub("data")),
             AiHandler = _ai,
             GenerateSamplesIfEmpty = false,
+            PickProofDestination = () => Task.FromResult<string?>(Path.Combine(_tmp.Path, "proofs.pdf")),
             OnShutdownRequested = () => Interlocked.Increment(ref _shutdownRequests),
         });
         _server.Scanner.ScanDirectory(_picsDir);
@@ -129,6 +130,61 @@ public class ApiContractTests : IAsyncLifetime
         var (missing, error) = await PostAsync("/api/photo/999999/star", null);
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         Assert.False(string.IsNullOrEmpty((string)error["error"]!));
+    }
+
+    [Fact]
+    public async Task BatchEdit_PatchesSelectedRecipes_LeavesOtherPhotosAndOriginalsIntact()
+    {
+        var photos = _server.Catalog.Query(new PhotoQuery()).Photos;
+        var before = File.ReadAllBytes(photos[0].FilePath);
+        var ids = new[] { photos[0].Id, photos[1].Id, photos[0].Id };
+        _server.Catalog.SaveEdits(ids[0], new JsonObject { ["design"] = new JsonObject { ["art"] = "Wedding" } });
+        var (invalid, _) = await PostAsync("/api/photos/batch-edit", new { photo_ids = ids, edits = new { warmth = 12, contrast = 101 } });
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        Assert.False(_server.Catalog.GetPhoto(ids[0])!.Edits.ContainsKey("warmth"));
+        var (_, result) = await PostAsync("/api/photos/batch-edit", new { photo_ids = ids, edits = new { contrast = 25, effect = "bw" } });
+        Assert.Equal(2, result["updated"]!.AsArray().Count);
+        Assert.Equal("Wedding", (string?)_server.Catalog.GetPhoto(ids[0])!.Edits["design"]!["art"]);
+        foreach (var id in ids) Assert.Equal(25, (int)_server.Catalog.GetPhoto(id)!.Edits["contrast"]!);
+        Assert.Empty(_server.Catalog.GetPhoto(photos[2].Id)!.Edits);
+        Assert.Equal(before, File.ReadAllBytes(photos[0].FilePath));
+    }
+
+    [Fact]
+    public async Task Undo_RestoresEachRecipe_AndProtectsLaterChangesAndNewerBatches()
+    {
+        var ids = _server.Catalog.Query(new PhotoQuery()).Photos.Select(p => p.Id).ToArray();
+        _server.Catalog.SaveEdits(ids[0], new JsonObject { ["warmth"] = 7 });
+        var (_, first) = await PostAsync("/api/photos/batch-edit", new { photo_ids = ids, edits = new { contrast = 8 } });
+        var (_, second) = await PostAsync("/api/photos/batch-edit", new { photo_ids = ids, edits = new { warmth = 30 } });
+        var (stale, _) = await PostAsync("/api/photos/batch-undo", new { token = (string?)first["undo_token"] });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        _server.Catalog.SaveEdits(ids[2], new JsonObject { ["brightness"] = 22 });
+        var (_, undo) = await PostAsync("/api/photos/batch-undo", new { token = (string?)second["undo_token"] });
+        Assert.Equal(1, (int)undo["skipped"]!);
+        Assert.Equal(7, (int)_server.Catalog.GetPhoto(ids[0])!.Edits["warmth"]!);
+        Assert.False(_server.Catalog.GetPhoto(ids[1])!.Edits.ContainsKey("warmth"));
+        Assert.Equal(8, (int)_server.Catalog.GetPhoto(ids[1])!.Edits["contrast"]!);
+        Assert.Equal(22, (int)_server.Catalog.GetPhoto(ids[2])!.Edits["brightness"]!);
+        Assert.Null(_server.Catalog.LastBatchToken());
+    }
+
+    [Fact]
+    public async Task ProofNumbers_FollowExportOrder_AndSurviveLibraryRestore()
+    {
+        var photos = _server.Catalog.Query(new PhotoQuery()).Photos.AsEnumerable().Reverse().ToList();
+        var (_, result) = await PostAsync("/api/proofs/export", new { photo_ids = photos.Select(p => p.Id) });
+        Assert.True(File.ReadAllBytes((string)result["path"]!).AsSpan().StartsWith("%PDF"u8));
+        var code = (string)result["code"]!;
+        var (_, found) = await PostAsync("/api/proofs/resolve", new { code, numbers = new[] { 3, 1, 3 } });
+        Assert.Equal(new[] { photos[2].Id, photos[0].Id }, found["photos"]!.AsArray().Select(p => (long)p!["id"]!));
+        var (bad, _) = await PostAsync("/api/proofs/resolve", new { code, numbers = new[] { 4 } });
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+        var backup = Path.Combine(_tmp.Path, "client.prlibrary");
+        _server.Catalog.BackUpLibrary(backup);
+        using var restored = new Catalog(Path.Combine(_tmp.Path, "restored.db"));
+        restored.RestoreLibrary(LibraryBackup.Read(backup), new Dictionary<string,string>());
+        Assert.Equal(_server.Catalog.GetSetting("proof:" + code), restored.GetSetting("proof:" + code));
     }
 
     [Fact]

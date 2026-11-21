@@ -4,6 +4,8 @@ namespace PicasaRevive.Core;
 
 public sealed record LibraryBackup(string Format, List<string> Folders, List<Photo> Photos)
 {
+    public Dictionary<string, string[]>? ProofSheets { get; init; }
+
     public const string CurrentFormat = "PicasaRevive.Library/1";
 
     public static LibraryBackup Read(string file)
@@ -28,7 +30,14 @@ public sealed partial class Catalog
             {
                 var photos = Query(new PhotoQuery { Limit = int.MaxValue }).Photos;
                 foreach (var photo in photos) photo.ThumbPath = "";
-                snapshot = new(LibraryBackup.CurrentFormat, GetWatchedFolders(), photos);
+                var sheets = new Dictionary<string, string[]>();
+                using (var cmd = _db.CreateCommand())
+                {
+                    cmd.CommandText = "SELECT substr(key,7), value FROM settings WHERE key GLOB 'proof:*'";
+                    using var rows = cmd.ExecuteReader();
+                    while (rows.Read()) sheets.Add(rows.GetString(0), JsonSerializer.Deserialize<string[]>(rows.GetString(1))!);
+                }
+                snapshot = new(LibraryBackup.CurrentFormat, GetWatchedFolders(), photos) { ProofSheets = sheets };
             }
             using (var stream = File.Create(temp)) JsonSerializer.Serialize(stream, snapshot, Json.Options);
             File.Move(temp, destination, true);
@@ -105,6 +114,22 @@ public sealed partial class Catalog
                 cmd.Parameters.AddWithValue("@ai_fixes", Json.Serialize(photo.AiFixes));
                 cmd.Parameters.AddWithValue("@added_at", photo.AddedAt);
                 cmd.ExecuteNonQuery();
+            }
+            if (backup.ProofSheets is { } sheets)
+            {
+                using var proof = _db.CreateCommand();
+                proof.Transaction = tx;
+                proof.CommandText = "INSERT OR REPLACE INTO settings(key,value) VALUES(@key,@value)";
+                var key = proof.Parameters.Add("@key", Microsoft.Data.Sqlite.SqliteType.Text);
+                var value = proof.Parameters.Add("@value", Microsoft.Data.Sqlite.SqliteType.Text);
+                foreach (var (code, files) in sheets)
+                {
+                    if (code.Length != 12 || !code.All(Uri.IsHexDigit) || files is null)
+                        throw new InvalidDataException("Invalid proof sheet in library backup.");
+                    key.Value = "proof:" + code.ToUpperInvariant();
+                    value.Value = Json.Serialize(files.Select(Reconnect));
+                    proof.ExecuteNonQuery();
+                }
             }
             tx.Commit();
             Interlocked.Increment(ref _libraryVersion);

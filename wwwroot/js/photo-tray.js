@@ -4,9 +4,13 @@
  */
 
 window.PicasaTray = {
+  selectedIds: new Set(),
+
   init() {
     this.setupTrayControls();
     this.setupActionButtons();
+    this.setupBatchEdit();
+    window.PhotoReview.init();
   },
 
   setupTrayControls() {
@@ -26,6 +30,7 @@ window.PicasaTray = {
       holdBtn.classList.remove('held');
       window.Picasa.state.selectedPhotos = [];
       window.Picasa.state.heldPhotos = [];
+      window.PicasaLibrary.rangeAnchor = null;
       this.updateTrayUI();
       document.querySelectorAll('.photo-card.selected').forEach(c => c.classList.remove('selected'));
     });
@@ -80,7 +85,7 @@ window.PicasaTray = {
       if (exists) {
         window.Picasa.state.selectedPhotos = window.Picasa.state.selectedPhotos.filter(p => p.id !== photo.id);
       } else {
-        window.Picasa.state.selectedPhotos.push(photo);
+        window.Picasa.state.selectedPhotos = [...window.Picasa.state.selectedPhotos, photo];
       }
     } else {
       window.Picasa.state.selectedPhotos = [photo];
@@ -94,14 +99,23 @@ window.PicasaTray = {
     if (exists) {
       window.Picasa.state.selectedPhotos = window.Picasa.state.selectedPhotos.filter(p => p.id !== photo.id);
     } else {
-      window.Picasa.state.selectedPhotos.push(photo);
+      window.Picasa.state.selectedPhotos = [...window.Picasa.state.selectedPhotos, photo];
     }
     this.updateTrayUI();
     this.syncCardSelection();
   },
 
+  selectRange(range, additive) {
+    const selected = window.Picasa.state.selectedPhotos;
+    window.Picasa.state.selectedPhotos = additive
+      ? selected.concat(range.filter(photo => !this.selectedIds.has(photo.id)))
+      : range;
+    this.updateTrayUI();
+    this.syncCardSelection();
+  },
+
   syncCardSelection() {
-    const selectedIds = new Set(window.Picasa.state.selectedPhotos.map(p => p.id));
+    const selectedIds = this.selectedIds;
     document.querySelectorAll('.photo-card').forEach(card => {
       const id = parseInt(card.dataset.id, 10);
       card.classList.toggle('selected', selectedIds.has(id));
@@ -112,6 +126,15 @@ window.PicasaTray = {
     const carousel = document.getElementById('tray-carousel');
     const photos = window.Picasa.state.selectedPhotos;
 
+    this.selectedIds = new Set(photos.map(p => p.id));
+    window.PhotoReview.selectionChanged(photos.length);
+    document.getElementById('tray-count').textContent = photos.length ? photos.length + ' selected' : 'Photo tray';
+    document.getElementById('batch-edit-toggle').hidden = photos.length < 2;
+    const panel = document.getElementById('batch-edit-panel');
+    if (photos.length < 2) panel.hidden = true;
+    document.getElementById('batch-edit-toggle').setAttribute('aria-expanded', String(!panel.hidden));
+    document.getElementById('batch-apply').textContent = 'Apply to ' + photos.length + ' photos';
+
     if (!photos.length) {
       carousel.innerHTML = '<div class="tray-empty-hint">No photos selected. Click any photo to select.</div>';
       return;
@@ -120,7 +143,7 @@ window.PicasaTray = {
     const esc = window.Picasa.escapeHtml;
     carousel.innerHTML = photos.map(p => `
       <div class="tray-thumb-card" data-id="${p.id}" title="${esc(p.filename)}">
-        <img src="/api/thumb/${p.id}" alt="${esc(p.filename)}">
+        <img loading="lazy" src="${window.PicasaLibrary.thumbUrl(p.id)}" alt="${esc(p.filename)}">
         <span class="tray-thumb-remove" data-id="${p.id}">✕</span>
       </div>
     `).join('');
@@ -141,6 +164,41 @@ window.PicasaTray = {
         const idx = window.Picasa.state.photos.findIndex(p => p.id === id);
         if (idx !== -1) window.PicasaViewer.open(idx);
       });
+    });
+  },
+
+  setupBatchEdit() {
+    const toggle = document.getElementById('batch-edit-toggle');
+    const panel = document.getElementById('batch-edit-panel');
+    const status = document.getElementById('batch-status');
+    const apply = document.getElementById('batch-apply');
+    toggle.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      toggle.setAttribute('aria-expanded', String(!panel.hidden));
+      if (!panel.hidden) panel.querySelector('input').focus();
+    });
+    panel.addEventListener('submit', async event => {
+      event.preventDefault();
+      const photos = [...window.Picasa.state.selectedPhotos];
+      const edits = {};
+      for (const field of panel.querySelectorAll('[name]')) {
+        if (field.value !== '') edits[field.name] = field.type === 'number' ? field.valueAsNumber : field.value;
+      }
+      if (!Object.keys(edits).length) {
+        status.textContent = 'Choose at least one adjustment.';
+        return;
+      }
+      if (photos.length < 2 || apply.disabled) return;
+      apply.disabled = true;
+      status.textContent = 'Saving edits…';
+      try {
+        const count = await window.PhotoReview.apply(photos, edits);
+        status.textContent = 'Saved edits to ' + count + ' of ' + photos.length + ' photos.';
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        apply.disabled = false;
+      }
     });
   },
 
@@ -244,21 +302,10 @@ window.PicasaTray = {
     const photos = window.Picasa.state.selectedPhotos;
     if (!photos.length) return;
 
-    for (const p of photos) {
-      const edits = { ...(p.edits || {}), feeling_lucky: true };
-      try {
-        const res = await fetch(`/api/photo/${p.id}/save-edit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ edits })
-        });
-        if (res.ok) {
-          p.edits = edits;
-          window.Picasa.emit('photoUpdated', p);
-        }
-      } catch (e) {}
-    }
-    alert(`Applied "I'm Feeling Lucky" auto-enhancement to ${photos.length} photo(s)!`);
+    try {
+      const count = await window.PhotoReview.apply([...photos], { feeling_lucky: true });
+      alert('Auto-enhanced ' + count + ' photos.');
+    } catch (err) { alert(err.message); }
   },
 
   async exportActive() {

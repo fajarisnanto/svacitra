@@ -625,6 +625,8 @@ window.PicasaEditor = {
   },
 
   openPhoto(photo) {
+    window.ComparePicks.close();
+    document.getElementById("copy-edit-panel").open = false;
     window.PhotoDesign.reset();
     this.photoGeneration = (this.photoGeneration || 0) + 1;
     this.clearPromptComparison();

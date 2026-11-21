@@ -3,7 +3,8 @@
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>2.6.0</Version>
+    <Version>2.7.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Authors>Fajar Isnanto</Authors>
     <Company>Fajar Isnanto</Company>
     <Product>svacitra</Product>

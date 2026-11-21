@@ -66,6 +66,10 @@ public sealed partial class Catalog : IDisposable
                 path     TEXT PRIMARY KEY COLLATE NOCASE,
                 added_at TEXT NOT NULL DEFAULT ''
             );
+            CREATE TABLE IF NOT EXISTS batch_undo (
+                id INTEGER PRIMARY KEY, path TEXT NOT NULL, original TEXT NOT NULL,
+                applied TEXT NOT NULL, token TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS settings (
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
@@ -345,6 +349,17 @@ public sealed partial class Catalog : IDisposable
     }
 
     /// <returns>New star state (0/1), or null when the photo does not exist.</returns>
+    public bool MarkPicked(long id)
+    {
+        lock (_lock)
+        {
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = "UPDATE photos SET is_starred=1 WHERE id=@id";
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() == 1;
+        }
+    }
+
     public int? ToggleStar(long id)
     {
         lock (_lock)
@@ -387,6 +402,80 @@ public sealed partial class Catalog : IDisposable
             cmd.Parameters.AddWithValue("@id", id);
             return cmd.ExecuteNonQuery() > 0;
         }
+    }
+
+    public sealed record RecipeChange(long Id, string Path, JsonObject Edits);
+    public sealed record BatchResult(List<RecipeChange> Changes, string? UndoToken, int Skipped = 0);
+
+    public string? LastBatchToken()
+    {
+        lock (_lock)
+        {
+            using var cmd = _db.CreateCommand();
+            cmd.CommandText = "SELECT token FROM batch_undo LIMIT 1";
+            return cmd.ExecuteScalar() as string;
+        }
+    }
+
+    public BatchResult ApplyBatchEdits(IReadOnlyCollection<long> ids, JsonObject patch)
+    {
+        lock (_lock)
+        {
+            using var tx = _db.BeginTransaction();
+            using var cmd = _db.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.Parameters.AddWithValue("@ids", JsonSerializer.Serialize(ids));
+            cmd.Parameters.AddWithValue("@patch", patch.ToJsonString());
+            var token = Guid.NewGuid().ToString("N");
+            cmd.Parameters.AddWithValue("@token", token);
+            cmd.CommandText = """
+                DELETE FROM batch_undo;
+                INSERT INTO batch_undo (id,path,original,applied,token)
+                SELECT id,path,edits,json_patch(CASE WHEN json_valid(edits) THEN edits ELSE '{}' END,@patch),@token
+                FROM photos WHERE id IN (SELECT value FROM json_each(@ids));
+                """;
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = """
+                UPDATE photos SET edits=(SELECT applied FROM batch_undo WHERE id=photos.id)
+                WHERE id IN (SELECT id FROM batch_undo) RETURNING id,path,edits
+                """;
+            var changes = ReadChanges(cmd);
+            if (changes.Count == 0) return new(changes, null); // disposal rolls back the empty batch
+            tx.Commit();
+            return new(changes, token);
+        }
+    }
+
+    public BatchResult? UndoBatch(string token)
+    {
+        lock (_lock)
+        {
+            using var tx = _db.BeginTransaction();
+            using var cmd = _db.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.Parameters.AddWithValue("@token", token);
+            cmd.CommandText = "SELECT COUNT(*) FROM batch_undo WHERE token=@token";
+            int count = Convert.ToInt32(cmd.ExecuteScalar());
+            if (count == 0) return null;
+            cmd.CommandText = """
+                UPDATE photos SET edits=(SELECT original FROM batch_undo WHERE id=photos.id)
+                WHERE EXISTS (SELECT 1 FROM batch_undo u WHERE u.id=photos.id AND u.path=photos.path
+                    AND u.applied=photos.edits AND u.token=@token) RETURNING id,path,edits
+                """;
+            var changes = ReadChanges(cmd);
+            cmd.CommandText = "DELETE FROM batch_undo WHERE token=@token";
+            cmd.ExecuteNonQuery();
+            tx.Commit();
+            return new(changes, null, count - changes.Count);
+        }
+    }
+
+    private static List<RecipeChange> ReadChanges(SqliteCommand cmd)
+    {
+        using var rows = cmd.ExecuteReader();
+        var changes = new List<RecipeChange>();
+        while (rows.Read()) changes.Add(new(rows.GetInt64(0), rows.GetString(1), Json.ParseObject(rows.GetString(2))));
+        return changes;
     }
 
     public bool UpdatePhotoAi(long id, string caption, IEnumerable<string> tags, IDictionary<string, int> fixes)

@@ -26,7 +26,7 @@ window.PicasaNative = {
   },
 
   inEditor() {
-    return window.Picasa.state.currentTab === 'editor' && window.PicasaEditor && window.PicasaEditor.currentPhoto;
+    return !window.ComparePicks?.active && window.Picasa.state.currentTab === 'editor' && window.PicasaEditor && window.PicasaEditor.currentPhoto;
   },
 
   // ---------------------------------------------------------------- folders
