@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Magick.NET-Q8-x64" Version="15.1.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
+    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20261107" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.13.0.20261107" />
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
+    <!-- GDI+ is only used as a fallback decoder for formats Skia cannot read (TIFF). -->
+    <PackageReference Include="System.Drawing.Common" Version="8.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PicasaRevive.Tests" />
+    <InternalsVisibleTo Include="PicasaRevive.Server" />
+  </ItemGroup>
+
+</Project>

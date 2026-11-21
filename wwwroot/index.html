@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>svacitra</title>
+  <link rel="stylesheet" href="css/picasa-theme.css">
+  <link rel="stylesheet" href="css/viewer.css">
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="stylesheet" href="css/collage.css">
+  <link rel="stylesheet" href="css/modern.css">
+</head>
+<body class="picasa-app">
+
+  <!-- SVG filters used by the Edit Studio live preview (shadows/highlights curve, sharpen, cool white balance) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="pr-tone" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+        <feComponentTransfer>
+          <feFuncR type="table" tableValues="0 1"/>
+          <feFuncG type="table" tableValues="0 1"/>
+          <feFuncB type="table" tableValues="0 1"/>
+        </feComponentTransfer>
+        <feConvolveMatrix id="pr-sharpen" order="3" kernelMatrix="0 0 0 0 1 0 0 0 0" edgeMode="duplicate" preserveAlpha="true"/>
+      </filter>
+      <filter id="pr-cool" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+        <feColorMatrix id="pr-cool-matrix" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- APPLICATION MENUBAR (CLASSIC WINDOWS STYLE) -->
+  <div class="picasa-menubar">
+    <div class="menu-item" tabindex="0">
+      <span class="menu-label"><span class="menu-hotkey">F</span>ile</span>
+      <div class="menu-dropdown">
+        <div class="dropdown-item" id="action-menu-add-folder">
+          <span class="item-text"><span class="item-icon">📁</span> Add Photo Folder...</span>
+          <span class="menu-shortcut">Ctrl+O</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-export">
+          <span class="item-text"><span class="item-icon">💾</span> Export Active Photo</span>
+          <span class="menu-shortcut">Ctrl+E</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-collage">
+          <span class="item-text"><span class="item-icon">🎴</span> Picture Pile Collage</span>
+          <span class="menu-shortcut">Ctrl+3</span>
+        </div>
+        <div class="dropdown-separator"></div>
+        <div class="dropdown-item danger-item" id="action-menu-exit">
+          <span class="item-text"><span class="item-icon">❌</span> Exit svacitra</span>
+          <span class="menu-shortcut">Ctrl+Q / Alt+F4</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-item" tabindex="0">
+      <span class="menu-label"><span class="menu-hotkey">E</span>dit</span>
+      <div class="menu-dropdown">
+        <div class="dropdown-item" id="action-menu-lucky">
+          <span class="item-text"><span class="item-icon">🪄</span> "I'm Feeling Lucky"</span>
+          <span class="menu-shortcut">Ctrl+L</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-autotune">
+          <span class="item-text"><span class="item-icon">✨</span> Luna AI Auto-Tune</span>
+          <span class="menu-shortcut">Ctrl+Shift+L</span>
+        </div>
+        <div class="dropdown-separator"></div>
+        <div class="dropdown-item" id="action-menu-rotate-left">
+          <span class="item-text"><span class="item-icon">↺</span> Rotate Left</span>
+          <span class="menu-shortcut">Ctrl+Shift+R</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-rotate-right">
+          <span class="item-text"><span class="item-icon">↻</span> Rotate Right</span>
+          <span class="menu-shortcut">Ctrl+R</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-star">
+          <span class="item-text"><span class="item-icon">⭐</span> Star Photo</span>
+          <span class="menu-shortcut">Ctrl+S</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-item" tabindex="0">
+      <span class="menu-label"><span class="menu-hotkey">V</span>iew</span>
+      <div class="menu-dropdown">
+        <div class="dropdown-item" id="action-menu-view-library">
+          <span class="item-text"><span class="item-icon">📚</span> Library View</span>
+          <span class="menu-shortcut">Ctrl+1</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-view-edit">
+          <span class="item-text"><span class="item-icon">🎨</span> Edit Studio</span>
+          <span class="menu-shortcut">Ctrl+2</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-view-collage">
+          <span class="item-text"><span class="item-icon">🎴</span> Collage Maker</span>
+          <span class="menu-shortcut">Ctrl+3</span>
+        </div>
+        <div class="dropdown-separator"></div>
+        <div class="dropdown-item" id="action-menu-view-slideshow">
+          <span class="item-text"><span class="item-icon">▶️</span> Fullscreen Slideshow</span>
+          <span class="menu-shortcut">F5</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-item" tabindex="0">
+      <span class="menu-label"><span class="menu-hotkey">T</span>ools</span>
+      <div class="menu-dropdown">
+        <div class="dropdown-item" id="action-menu-tools-ai">
+          <span class="item-text"><span class="item-icon">🤖</span> Luna AI Configuration...</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-tools-rescan">
+          <span class="item-text"><span class="item-icon">🔄</span> Rescan Library Folders</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-item" tabindex="0">
+      <span class="menu-label"><span class="menu-hotkey">H</span>elp</span>
+      <div class="menu-dropdown">
+        <div class="dropdown-item" id="action-menu-help-shortcuts">
+          <span class="item-text"><span class="item-icon">⌨️</span> Keyboard Shortcuts</span>
+        </div>
+        <div class="dropdown-item" id="action-menu-help-about">
+          <span class="item-text"><span class="item-icon">ℹ️</span> About svacitra</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP HEADER / TOOLBAR -->
+  <header class="picasa-topbar">
+    <div class="brand-group">
+      <div class="picasa-aperture-logo">
+        <svg viewBox="0 0 32 32" width="26" height="26">
+          <circle cx="16" cy="16" r="14" fill="#333"/>
+          <path d="M16 2 A14 14 0 0 1 28 9 L16 16 Z" fill="#E53935"/>
+          <path d="M28 9 A14 14 0 0 1 30 21 L16 16 Z" fill="#FB8C00"/>
+          <path d="M30 21 A14 14 0 0 1 20 29 L16 16 Z" fill="#FDD835"/>
+          <path d="M20 29 A14 14 0 0 1 7 27 L16 16 Z" fill="#43A047"/>
+          <path d="M7 27 A14 14 0 0 1 2 16 L16 16 Z" fill="#1E88E5"/>
+          <path d="M2 16 A14 14 0 0 1 8 5 L16 16 Z" fill="#8E24AA"/>
+          <circle cx="16" cy="16" r="4.5" fill="#222"/>
+        </svg>
+      </div>
+      <span class="brand-title">svacitra</span>
+    </div>
+
+    <!-- MAIN MODE TABS -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" id="tab-library" title="Photo Library (Ctrl+1)">Library</button>
+      <button class="nav-tab" id="tab-edit" title="Edit Studio (Ctrl+2)">Edit Studio</button>
+      <button class="nav-tab" id="tab-collage" title="Collage Maker (Ctrl+3)">Collage</button>
+    </nav>
+
+    <!-- LIVE SEARCH BAR (MATCHES FILENAME, FOLDERS, & AI TAGS) -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="global-search" placeholder="Search photos by filename, date, or AI tags (e.g. sunset, beach)..." autocomplete="off">
+      <button id="clear-search" class="clear-search-btn" title="Clear Search">✕</button>
+    </div>
+
+    <!-- RIGHT ACTION BUTTONS -->
+    <div class="topbar-actions">
+      <!-- GPT-6 LUNA AI BUTTON -->
+      <button class="picasa-btn ai-luna-btn" id="btn-open-ai-settings" title="Configure GPT-6 Luna AI API">
+        <span class="btn-icon">🤖</span> Luna AI
+      </button>
+      <button class="picasa-btn primary-btn" id="btn-import-folder" title="Scan or watch folder">
+        <span class="btn-icon">📁</span> Add Folder...
+      </button>
+      <button class="picasa-btn" id="btn-slideshow-all" title="Full-screen Slideshow">
+        <span class="btn-icon">▶</span> Slideshow
+      </button>
+      <button class="picasa-btn" id="btn-refresh-library" title="Rescan Library">
+        <span class="btn-icon">↻</span>
+      </button>
+      <button class="picasa-btn exit-app-btn" id="btn-app-exit" title="Exit Application (Ctrl+Q / Alt+F4)">
+        <span class="btn-icon">⏻</span> Exit
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE LAYOUT -->
+  <div class="picasa-workspace" id="view-library">
+    <!-- LEFT SIDEBAR -->
+    <aside class="picasa-sidebar">
+      <!-- COLLECTIONS & ALBUMS -->
+      <div class="sidebar-section">
+        <div class="section-header">COLLECTIONS</div>
+        <ul class="sidebar-list">
+          <li class="sidebar-item active" data-filter="all">
+            <span class="item-icon">🖼️</span>
+            <span class="item-title">All Photos</span>
+            <span class="item-count" id="count-all">0</span>
+          </li>
+          <li class="sidebar-item" data-filter="starred">
+            <span class="item-icon star-gold">⭐</span>
+            <span class="item-title">Starred Photos</span>
+            <span class="item-count" id="count-starred">0</span>
+          </li>
+          <li class="sidebar-item" data-filter="ai-tagged">
+            <span class="item-icon">🤖</span>
+            <span class="item-title">Luna AI Tagged</span>
+            <span class="item-count" id="count-ai-tagged">0</span>
+          </li>
+          <li class="sidebar-item" data-filter="recent">
+            <span class="item-icon">🕒</span>
+            <span class="item-title">Recently Added</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- WATCHED FOLDERS -->
+      <div class="sidebar-section folders-section">
+        <div class="section-header">
+          <span>FOLDERS ON DISK</span>
+          <button class="folder-action-btn" id="btn-quick-add-folder" title="Add Folder">+</button>
+        </div>
+        <ul class="sidebar-list" id="folders-tree-list">
+          <li class="sidebar-loading">Loading folders...</li>
+        </ul>
+      </div>
+
+      <!-- SCANNER STATUS IN SIDEBAR FOOTER -->
+      <div class="sidebar-footer" id="scanner-footer" style="display: none;">
+        <div class="scan-spinner"></div>
+        <div class="scan-text">
+          <div class="scan-label" id="scan-label">Scanning...</div>
+          <div class="scan-progress-bar"><div class="scan-bar-fill" id="scan-progress-fill"></div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER PHOTO GALLERY VIEW -->
+    <main class="picasa-main-view">
+      <!-- Filter Bar -->
+      <div class="filter-header-bar">
+        <div class="current-scope-info" id="current-scope-label">
+          <span class="scope-icon">📁</span>
+          <span class="scope-text">All Photos</span>
+          <span class="scope-badge" id="scope-count">0 items</span>
+        </div>
+        <div class="filter-toggles">
+          <button class="chip-filter active" data-chip="all">All</button>
+          <button class="chip-filter" data-chip="starred">⭐ Starred</button>
+          <button class="chip-filter" data-chip="ai-tagged">🤖 AI Tagged</button>
+        </div>
+      </div>
+
+      <!-- Virtualized / Grouped Photo Gallery Container -->
+      <div class="gallery-scroll-container" id="gallery-scroll-area">
+        <div class="gallery-content" id="gallery-content">
+          <!-- Folders & Photos injected dynamically -->
+          <div class="gallery-empty-state">
+            <div class="empty-icon">📷</div>
+            <h2>Your Photo Library Is Ready</h2>
+            <p>Scanning folders or click "Add Folder" to index your photo directories.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE SCRUBBER (RIGHT EDGE) -->
+      <div class="timeline-scrubber" id="timeline-scrubber">
+        <div class="timeline-track" id="timeline-track"></div>
+        <div class="timeline-indicator" id="timeline-indicator"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- EDIT STUDIO VIEW (TAB 2) -->
+  <div class="picasa-workspace editor-workspace" id="view-editor" style="display: none;">
+    <!-- LEFT 3-TAB EDIT PALETTE -->
+    <div class="editor-palette">
+      <!-- LUNA AI CREATIVE PROMPT SECTION -->
+      <div class="luna-prompt-panel">
+        <div class="luna-prompt-titlebar">
+          <div class="luna-prompt-badge">
+            <span class="luna-sparkle">✨</span>
+            <span class="luna-prompt-title">GPT-6 Luna AI Studio</span>
+          </div>
+          <span class="luna-prompt-sub">Prompt-based Editing</span>
+        </div>
+
+        <div class="luna-prompt-input-group">
+          <input type="text" id="luna-prompt-input" class="luna-prompt-input" placeholder="Type prompt (e.g. 'golden sunset', 'vintage 35mm')..." autocomplete="off" />
+          <button id="btn-luna-prompt-run" class="luna-prompt-submit-btn" title="Run AI Prompt">
+            <span class="luna-run-icon">🪄</span> Run
+          </button>
+        </div>
+
+        <!-- QUICK INSPIRATION CHIPS -->
+        <div class="luna-prompt-chips" id="luna-prompt-chips">
+          <button type="button" class="luna-chip" data-prompt="Golden hour warm sunset glow">🌅 Golden Hour</button>
+          <button type="button" class="luna-chip" data-prompt="Vintage 35mm retro film aesthetic">🎞️ 35mm Film</button>
+          <button type="button" class="luna-chip" data-prompt="High contrast moody dramatic black and white">🖤 Moody B&W</button>
+          <button type="button" class="luna-chip" data-prompt="Brighten vibrant colors and clarity pop">☀️ Vibrant Pop</button>
+          <button type="button" class="luna-chip" data-prompt="Cinematic shadows with subtle dark vignette">🎬 Cinematic</button>
+        </div>
+
+        <!-- LIVE STATUS -->
+        <div class="luna-prompt-status" id="luna-prompt-status" style="display: none;">
+          <div class="luna-spinner"></div>
+          <span class="luna-status-msg" id="luna-prompt-status-msg">Luna is tuning your photo...</span>
+        </div>
+
+        <!-- FEEDBACK EXPLANATION -->
+        <div class="luna-prompt-result-box" id="luna-prompt-result-box" style="display: none;">
+          <div class="luna-result-header">
+            <span class="luna-result-model" id="luna-prompt-model-badge">GPT-6 Luna</span>
+            <button class="luna-result-close" id="btn-close-luna-prompt-result" title="Dismiss">×</button>
+          </div>
+          <div class="luna-result-explanation" id="luna-prompt-explanation"></div>
+        </div>
+      </div>
+
+      <!-- TAB BUTTONS -->
+      <div class="edit-tab-bar">
+        <button class="edit-tab active" data-tab="fixes" title="Basic Fixes">
+          <span class="tab-icon">🔧</span> Fixes
+        </button>
+        <button class="edit-tab" data-tab="tuning" title="Tuning Lighting & Color">
+          <span class="tab-icon">🎚️</span> Tuning
+        </button>
+        <button class="edit-tab" data-tab="effects" title="Creative Effects">
+          <span class="tab-icon">✨</span> Effects
+        </button>
+        <button class="edit-tab" data-tab="design" title="Titles, word art and frames">Design</button>
+      </div>
+
+      <!-- TAB 1: BASIC FIXES -->
+      <div class="edit-tab-content active" id="edit-tab-fixes">
+        <!-- GPT-6 LUNA AI AUTO-TUNE BUTTON -->
+        <button class="tool-btn luna-autotune-btn" id="btn-tool-luna-autotune">
+          <span class="tool-icon">✨</span>
+          <span class="tool-name">GPT-6 Luna AI Auto-Tune</span>
+        </button>
+
+        <div class="edit-btn-grid" style="margin-top: 8px;">
+          <button class="tool-btn" id="btn-tool-crop">
+            <span class="tool-icon">✂️</span>
+            <span class="tool-name">Crop</span>
+          </button>
+          <button class="tool-btn" id="btn-tool-straighten">
+            <span class="tool-icon">📐</span>
+            <span class="tool-name">Straighten</span>
+          </button>
+          <button class="tool-btn" id="btn-tool-redeye">
+            <span class="tool-icon">👁️</span>
+            <span class="tool-name">Red-Eye</span>
+          </button>
+          <button class="tool-btn lucky-btn" id="btn-tool-lucky">
+            <span class="tool-icon">🪄</span>
+            <span class="tool-name">I'm Feeling Lucky</span>
+          </button>
+          <button class="tool-btn" id="btn-tool-autocontrast">
+            <span class="tool-icon">⚖️</span>
+            <span class="tool-name">Auto Contrast</span>
+          </button>
+          <button class="tool-btn" id="btn-tool-autocolor">
+            <span class="tool-icon">🎨</span>
+            <span class="tool-name">Auto Color</span>
+          </button>
+        </div>
+
+        <!-- Luna Feedback Box -->
+        <div class="luna-critique-box" id="luna-critique-box" style="display: none;">
+          <div class="critique-header">🤖 Luna's Critique:</div>
+          <div class="critique-text" id="luna-critique-text"></div>
+        </div>
+
+        <!-- Slider Controls -->
+        <div class="slider-group" style="margin-top: 14px;">
+          <div class="slider-row">
+            <label>Fill Light</label>
+            <span class="slider-val" id="val-fill-light">0</span>
+            <input type="range" id="slider-fill-light" min="0" max="100" value="0">
+          </div>
+        </div>
+
+        <!-- Crop Sub-Panel -->
+        <div class="crop-subpanel" id="crop-subpanel" style="display: none;">
+          <div class="subpanel-title">Aspect Ratio</div>
+          <div class="aspect-pills">
+            <button class="pill-btn active" data-ratio="free">Manual</button>
+            <button class="pill-btn" data-ratio="1:1">1:1 Square</button>
+            <button class="pill-btn" data-ratio="4:3">4:3 Standard</button>
+            <button class="pill-btn" data-ratio="16:9">16:9 Widescreen</button>
+            <button class="pill-btn" data-ratio="4:6">4 x 6 (Print)</button>
+          </div>
+          <div class="subpanel-actions">
+            <button class="picasa-btn primary-btn" id="btn-apply-crop">Apply</button>
+            <button class="picasa-btn" id="btn-cancel-crop">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Straighten Sub-Panel -->
+        <div class="straighten-subpanel" id="straighten-subpanel" style="display: none;">
+          <div class="subpanel-title">Straighten Angle</div>
+          <div class="slider-row">
+            <input type="range" id="slider-straighten" min="-20" max="20" value="0" step="0.5">
+            <span class="slider-val" id="val-straighten">0°</span>
+          </div>
+          <div class="subpanel-actions">
+            <button class="picasa-btn primary-btn" id="btn-apply-straighten">Apply</button>
+            <button class="picasa-btn" id="btn-reset-straighten">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TUNING -->
+      <div class="edit-tab-content" id="edit-tab-tuning">
+        <div class="slider-group">
+          <div class="slider-row">
+            <label>Brightness</label>
+            <span class="slider-val" id="val-brightness">0</span>
+            <input type="range" id="slider-brightness" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Highlights</label>
+            <span class="slider-val" id="val-highlights">0</span>
+            <input type="range" id="slider-highlights" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Shadows</label>
+            <span class="slider-val" id="val-shadows">0</span>
+            <input type="range" id="slider-shadows" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Contrast</label>
+            <span class="slider-val" id="val-contrast">0</span>
+            <input type="range" id="slider-contrast" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Color Temperature</label>
+            <span class="slider-val" id="val-warmth">0</span>
+            <input type="range" id="slider-warmth" min="-100" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Saturation</label>
+            <span class="slider-val" id="val-saturation">0</span>
+            <input type="range" id="slider-saturation" min="-100" max="100" value="0">
+          </div>
+        </div>
+
+        <!-- OpenCV engine: these re-render the photo when the slider is released -->
+        <div class="engine-group-title" title="Powered by the open-source OpenCV engine. The photo is re-rendered when you release the slider.">Detail <span class="engine-badge">OpenCV</span></div>
+        <div class="slider-group">
+          <div class="slider-row">
+            <label>Noise Reduction</label>
+            <span class="slider-val" id="val-denoise">0</span>
+            <input type="range" id="slider-denoise" min="0" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Clarity</label>
+            <span class="slider-val" id="val-clarity">0</span>
+            <input type="range" id="slider-clarity" min="0" max="100" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Sharpen</label>
+            <span class="slider-val" id="val-detail">0</span>
+            <input type="range" id="slider-detail" min="0" max="100" value="0">
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: EFFECTS -->
+      <div class="edit-tab-content" id="edit-tab-effects">
+        <div class="effects-grid">
+          <div class="effect-card active" data-effect="none">
+            <div class="effect-preview none-preview"></div>
+            <span>Original</span>
+          </div>
+          <div class="effect-card" data-effect="sepia">
+            <div class="effect-preview sepia-preview"></div>
+            <span>Sepia</span>
+          </div>
+          <div class="effect-card" data-effect="bw">
+            <div class="effect-preview bw-preview"></div>
+            <span>B&W Crisp</span>
+          </div>
+          <div class="effect-card" data-effect="warmify">
+            <div class="effect-preview warm-preview"></div>
+            <span>Warmify</span>
+          </div>
+          <div class="effect-card" data-effect="sharpen">
+            <div class="effect-preview sharpen-preview"></div>
+            <span>Sharpen</span>
+          </div>
+          <div class="effect-card" data-effect="vignette">
+            <div class="effect-preview vignette-preview"></div>
+            <span>Vignette</span>
+          </div>
+        </div>
+
+        <div class="slider-group" id="vignette-controls" style="display: none; margin-top: 15px;">
+          <div class="slider-row">
+            <label>Vignette Strength</label>
+            <span class="slider-val" id="val-vignette">50</span>
+            <input type="range" id="slider-vignette" min="0" max="100" value="50">
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-tab-content" id="edit-tab-design">
+        <div class="design-fields">
+          <label>Photo title<input data-design="title" maxlength="160" placeholder="Add a title"></label>
+          <label>Word art<input data-design="art" maxlength="160" placeholder="Your words"></label>
+          <div class="design-options">
+            <label>Style<select data-design="style"><option value="outline">Outline</option><option value="gold">Gold foil</option><option value="retro">Retro shadow</option><option value="neon">Neon glow</option></select></label>
+            <label>Lettering<select data-design="font"><option value="sans">Bold sans</option><option value="serif">Italic serif</option><option value="mono">Typewriter</option></select></label>
+            <label>Position<select data-design="position"><option value="center">Center</option><option value="upper">Upper center</option><option value="lower">Lower center</option></select></label>
+            <label>Size<select data-design="size"><option value="medium">Medium</option><option value="small">Small</option><option value="large">Large</option></select></label>
+          </div>
+          <label>Lettering color<input type="color" data-design="color" value="#ffffff"></label>
+          <label>Frame<select data-design="frame"><option value="none">None</option><option value="mat">Ivory mat</option><option value="gilt">Double gold</option><option value="film">Filmstrip</option><option value="ink">Black keyline</option></select></label>
+          <label>Camera timestamp<select data-design="stamp"><option value="none">Off</option><option value="date">Capture date</option><option value="datetime">Capture date and time</option></select></label>
+          <span id="design-date-note" role="status"></span>
+          <span id="design-render-note" role="status"></span>
+          <button type="button" class="picasa-btn" id="clear-design">Clear design</button>
+        </div>
+      </div>
+
+      <!-- EDIT PALETTE FOOTER -->
+      <div class="editor-palette-footer">
+        <button class="picasa-btn" id="btn-undo-all" title="Revert to original">Undo All Fixes</button>
+        <button class="picasa-btn primary-btn" id="btn-save-edits">Save Edits</button>
+      </div>
+    </div>
+
+    <!-- CENTER EDIT CANVAS VIEW -->
+    <div class="editor-canvas-stage">
+      <div class="stage-toolbar">
+        <button type="button" class="picasa-btn" id="prompt-view-toggle" aria-controls="canvas-viewport" aria-pressed="false" hidden>Side by side</button>
+        <button class="picasa-btn" id="btn-compare-toggle" title="Hold to view original (or Toggle)">
+          <span class="btn-icon">👁️</span> Compare (Original)
+        </button>
+        <button class="picasa-btn" id="btn-rotate-edit-left" title="Rotate Left">⟲ Rotate</button>
+        <button class="picasa-btn" id="btn-rotate-edit-right" title="Rotate Right">⟳ Rotate</button>
+        <button class="picasa-btn" id="btn-export-edited">Export Copy...</button>
+        <button class="picasa-btn" id="btn-back-to-library">Back to Library (Esc)</button>
+      </div>
+
+      <div class="canvas-viewport" id="canvas-viewport">
+        <section class="before-pane" aria-label="Before prompt">
+          <span class="pane-label">Before</span>
+          <div class="pane-image"><img id="prompt-before-img" alt="Photo before the prompt" hidden>
+            <span id="prompt-before-status" role="status"></span></div>
+        </section>
+        <div class="after-pane">
+          <span class="pane-label">After</span>
+          <div class="pane-image">
+            <img id="design-preview" alt="Photo with design applied" hidden>
+            <!-- Interactive Canvas / Image -->
+            <div class="canvas-image-wrapper" id="canvas-image-wrapper">
+              <img id="editor-display-img" src="" alt="Editing Photo">
+              <div class="crop-overlay" id="crop-overlay" style="display: none;">
+                <div class="crop-grid">
+                  <div class="crop-line vertical-1"></div>
+                  <div class="crop-line vertical-2"></div>
+                  <div class="crop-line horizontal-1"></div>
+                  <div class="crop-line horizontal-2"></div>
+                </div>
+                <div class="crop-handle handle-nw" data-handle="nw"></div>
+                <div class="crop-handle handle-ne" data-handle="ne"></div>
+                <div class="crop-handle handle-sw" data-handle="sw"></div>
+                <div class="crop-handle handle-se" data-handle="se"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT FILMSTRIP AT BOTTOM -->
+      <div class="editor-filmstrip-bar" id="editor-filmstrip"></div>
+    </div>
+  </div>
+
+  <!-- COLLAGE MAKER VIEW (TAB 3) -->
+  <div class="picasa-workspace collage-workspace" id="view-collage" style="display: none;">
+    <div class="collage-sidebar">
+      <div class="section-header">COLLAGE STYLES</div>
+      <div class="collage-type-selector">
+        <button class="collage-type-card active" data-type="picture_pile">
+          <span class="type-icon">🎴</span>
+          <span class="type-name">Picture Pile</span>
+          <span class="type-desc">Scattered polaroids with tilt & drop shadow</span>
+        </button>
+        <button class="collage-type-card" data-type="grid">
+          <span class="type-icon">▦</span>
+          <span class="type-name">Mosaic Grid</span>
+          <span class="type-desc">Clean, seamless photo grid</span>
+        </button>
+      </div>
+
+      <div class="section-header" style="margin-top: 20px;">OPTIONS</div>
+      <div class="slider-group">
+        <div class="slider-row">
+          <label>Background Color</label>
+          <input type="color" id="collage-bg-color" value="#18181b">
+        </div>
+      </div>
+
+      <div class="collage-actions">
+        <button class="picasa-btn primary-btn" id="btn-generate-collage">Create Collage</button>
+        <button class="picasa-btn" id="btn-export-collage">Save / Export Collage</button>
+      </div>
+    </div>
+
+    <div class="collage-canvas-stage">
+      <div class="collage-preview-container" id="collage-preview-container">
+        <div class="empty-state">
+          <div class="empty-icon">🖼️</div>
+          <h2>Select Photos in Photo Tray</h2>
+          <p>Hold photos in your Photo Tray below, then click "Create Collage".</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THE LEGENDARY PICASA PHOTO TRAY (ALWAYS DOCKED AT BOTTOM) -->
+  <footer class="picasa-photo-tray">
+    <div class="tray-left">
+      <div class="tray-controls">
+        <div class="tray-title">PHOTO TRAY</div>
+        <div class="tray-actions">
+          <button class="tray-btn" id="btn-tray-hold" title="Hold selection while browsing other folders">Hold</button>
+          <button class="tray-btn" id="btn-tray-clear" title="Clear current tray">Clear</button>
+        </div>
+      </div>
+
+      <!-- Thumbnail Carousel of Selected Items -->
+      <div class="tray-items-carousel" id="tray-carousel">
+        <div class="tray-empty-hint">No photos selected. Click any photo to select.</div>
+      </div>
+    </div>
+
+    <!-- Action Bar Buttons -->
+    <div class="tray-action-bar">
+      <!-- LUNA AI AUTO-TAG BUTTON -->
+      <button class="action-btn ai-action-btn" id="btn-action-ai-tag" title="Analyze & Auto-Tag with GPT-6 Luna">
+        <span class="action-icon">🤖</span> Luna Tag
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn" id="btn-action-star" title="Star / Unstar Selected (Ctrl+S)">
+        <span class="action-icon">⭐</span> Star
+      </button>
+      <button class="action-btn" id="btn-action-rot-left" title="Rotate Left (Ctrl+L)">
+        <span class="action-icon">⟲</span> Rotate
+      </button>
+      <button class="action-btn" id="btn-action-rot-right" title="Rotate Right (Ctrl+R)">
+        <span class="action-icon">⟳</span> Rotate
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn lucky-action-btn" id="btn-action-lucky" title="Instant I'm Feeling Lucky Auto-Enhance">
+        <span class="action-icon">🪄</span> I'm Feeling Lucky
+      </button>
+      <div class="action-separator"></div>
+      <button class="action-btn" id="btn-action-collage" title="Create Collage with Tray Items">
+        <span class="action-icon">🖼️</span> Collage
+      </button>
+      <button class="action-btn" id="btn-action-slideshow" title="Play Slideshow">
+        <span class="action-icon">▶</span> Slideshow
+      </button>
+      <button class="action-btn" id="btn-action-export" title="Export Selected Photos">
+        <span class="action-icon">📤</span> Export
+      </button>
+      <button class="action-btn" id="btn-action-info" title="Photo properties and EXIF information (Ctrl+I)">
+        <span class="action-icon">ℹ</span> Info
+      </button>
+    </div>
+
+    <!-- Zoom Slider for Grid Thumbnails -->
+    <div class="tray-zoom-control">
+      <span class="zoom-icon small">▦</span>
+      <input type="range" id="grid-zoom-slider" min="110" max="380" value="180" title="Thumbnail Size">
+      <span class="zoom-icon large">▦</span>
+    </div>
+  </footer>
+
+  <!-- STANDALONE DARK PHOTO VIEWER (LIGHTBOX) -->
+  <div class="picasa-photo-viewer" id="picasa-viewer" style="display: none;">
+    <!-- Top Floating Toolbar -->
+    <div class="viewer-top-bar">
+      <div class="viewer-info">
+        <span class="viewer-filename" id="viewer-filename">photo.jpg</span>
+        <span class="viewer-meta" id="viewer-meta">1920x1080 • 2.4 MB</span>
+      </div>
+      <div class="viewer-actions">
+        <button class="viewer-icon-btn" id="viewer-btn-ai-analyze" title="Run GPT-6 Luna AI Analysis">🤖 Luna Analyze</button>
+        <button class="viewer-icon-btn" id="viewer-btn-star" title="Star Photo">⭐</button>
+        <button class="viewer-icon-btn" id="viewer-btn-edit" title="Edit in Studio (Enter)">✏️ Edit</button>
+        <button class="viewer-icon-btn" id="viewer-btn-rotate-left" title="Rotate Left">⟲</button>
+        <button class="viewer-icon-btn" id="viewer-btn-rotate-right" title="Rotate Right">⟳</button>
+        <button class="viewer-icon-btn" id="viewer-btn-info" title="Properties and EXIF information (Ctrl+I)">ℹ Info</button>
+        <button class="viewer-icon-btn" id="viewer-btn-reveal" title="Show in Windows Explorer">📁 Reveal</button>
+        <button class="viewer-icon-btn close-btn" id="viewer-btn-close" title="Close Viewer (Esc)">✕</button>
+      </div>
+    </div>
+
+    <!-- AI Info Bar (Overlay at top under toolbar) -->
+    <div class="viewer-ai-bar" id="viewer-ai-bar" style="display: none;">
+      <div class="viewer-ai-caption" id="viewer-ai-caption"></div>
+      <div class="viewer-ai-tags" id="viewer-ai-tags"></div>
+    </div>
+
+    <!-- Main Zoom & Pan Stage -->
+    <div class="viewer-viewport" id="viewer-viewport">
+      <img id="viewer-main-img" src="" alt="Viewing Image">
+      <button class="viewer-nav-btn prev-btn" id="viewer-nav-prev" title="Previous Photo (Left Arrow)">❮</button>
+      <button class="viewer-nav-btn next-btn" id="viewer-nav-next" title="Next Photo (Right Arrow)">❯</button>
+    </div>
+
+    <!-- Bottom Floating Filmstrip -->
+    <div class="viewer-filmstrip" id="viewer-filmstrip">
+      <div class="filmstrip-track" id="filmstrip-track"></div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN SLIDESHOW OVERLAY -->
+  <div class="picasa-slideshow-overlay" id="picasa-slideshow" style="display: none;">
+    <div class="slideshow-slide" id="slideshow-slide">
+      <img id="slideshow-img" src="" alt="Slideshow">
+    </div>
+    <div class="slideshow-controls">
+      <button class="ss-btn" id="ss-btn-prev">❮</button>
+      <button class="ss-btn" id="ss-btn-play">❚❚</button>
+      <button class="ss-btn" id="ss-btn-next">❯</button>
+      <button class="ss-btn" id="ss-btn-export" title="Save this slideshow as a 720p MP4">Export MP4…</button>
+      <span id="ss-export-status" role="status"></span>
+      <button class="ss-btn" id="ss-btn-close">✕ Exit</button>
+    </div>
+  </div>
+
+  <!-- PHOTO PROPERTIES / EXIF DIALOG -->
+  <div class="picasa-modal-backdrop" id="modal-photo-info" style="display: none; z-index: 20000;">
+    <div class="picasa-modal photo-info-modal">
+      <div class="modal-header">
+        <span class="modal-title" id="photo-info-title">Properties</span>
+        <button class="modal-close-btn" id="btn-close-photo-info">✕</button>
+      </div>
+      <div class="modal-body photo-info-body" id="photo-info-body"></div>
+      <div class="modal-footer">
+        <button class="picasa-btn" id="btn-photo-info-copy">Copy</button>
+        <button class="picasa-btn primary-btn" id="btn-photo-info-ok">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD FOLDER MODAL DIALOG -->
+  <div class="picasa-modal-backdrop" id="modal-add-folder" style="display: none;">
+    <div class="picasa-modal">
+      <div class="modal-header">
+        <span class="modal-title">Watch / Add Photo Folder</span>
+        <button class="modal-close-btn" id="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Enter the local directory path you want svacitra to index and watch for photos:</p>
+        <div class="api-key-input-wrapper">
+          <input type="text" id="input-folder-path" class="modal-input" placeholder="e.g. C:\Users\Username\Pictures">
+          <button class="picasa-btn" id="btn-browse-folder" type="button" title="Choose a folder with the Windows folder picker">Browse...</button>
+        </div>
+        <div class="quick-folder-chips">
+          <button class="quick-chip" id="chip-default-pictures">Standard Pictures Folder</button>
+          <button class="quick-chip" id="chip-sample-folder">Sample Demo Library</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="picasa-btn" id="btn-cancel-modal">Cancel</button>
+        <button class="picasa-btn primary-btn" id="btn-confirm-scan">Start Scan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GPT-6 LUNA AI SETTINGS MODAL -->
+  <div class="picasa-modal-backdrop" id="modal-ai-settings" style="display: none;">
+    <div class="picasa-modal ai-modal">
+      <div class="modal-header">
+        <span class="modal-title">🤖 Luna AI Configuration</span>
+        <button class="modal-close-btn" id="btn-close-ai-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Luna uses OpenAI <strong>GPT-Image-2.5</strong> with your own API key. Prompts in Edit Studio then create an AI-edited copy of the photo (your original is never changed). Auto-tune and tagging always run on the built-in offline engine.
+        </p>
+
+        <div class="form-group">
+          <label>AI Model</label>
+          <div class="quick-folder-chips" style="margin-bottom: 6px;">
+            <button type="button" class="quick-chip model-preset-btn" data-model="gpt-image-2.5-flare" data-endpoint="https://api.openai.com/v1">GPT-Image-2.5 Flare (default)</button>
+            <button type="button" class="quick-chip model-preset-btn" data-model="gpt-image-2.5-sunburst" data-endpoint="https://api.openai.com/v1">GPT-Image-2.5 Sunburst (premium)</button>
+            <button type="button" class="quick-chip model-preset-btn" data-model="gpt-4o" data-endpoint="https://api.openai.com/v1">gpt-4o (slider tuning)</button>
+            <button type="button" class="quick-chip model-preset-btn" data-model="Luna Heuristic Engine" data-endpoint="local" data-clear-key="true">Offline Heuristic</button>
+          </div>
+          <input type="text" id="input-ai-model" class="modal-input" value="gpt-image-2.5-flare">
+          <small class="hint-text"><strong>gpt-image-*</strong> models generate a new edited image through the Images API and are billed to your key per image. Chat vision models such as <strong>gpt-4o</strong> instead return slider settings.</small>
+        </div>
+
+        <div class="form-group">
+          <label>API Endpoint</label>
+          <input type="text" id="input-ai-endpoint" class="modal-input" value="https://api.openai.com/v1">
+        </div>
+
+        <div class="form-group">
+          <label>API Key</label>
+          <div class="api-key-input-wrapper">
+            <input type="password" id="input-ai-key" class="modal-input" placeholder="Paste your API key (leave empty for Offline Heuristic)">
+            <button class="picasa-btn" id="btn-toggle-key-visibility" type="button">👁️</button>
+          </div>
+          <small class="hint-text">Leave blank to use Luna's built-in heuristic analysis engine offline with zero API calls.</small>
+        </div>
+
+        <div class="ai-status-banner" id="ai-status-banner">
+          <span class="status-dot green"></span>
+          <span class="status-msg" id="ai-status-text">GPT-6 Luna API ready.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="picasa-btn" id="btn-test-ai-settings" type="button" style="margin-right:auto;" title="Send a tiny test request with these settings">Test Connection</button>
+        <button class="picasa-btn" id="btn-cancel-ai-modal">Cancel</button>
+        <button class="picasa-btn primary-btn" id="btn-save-ai-settings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/icons.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/photo-tray.js"></script>
+  <script src="js/viewer.js"></script>
+  <script src="js/photo-design.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/collage.js"></script>
+  <script src="js/slideshow.js"></script>
+  <script src="js/native-bridge.js"></script>
+</body>
+</html>

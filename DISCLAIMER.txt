@@ -1,0 +1,9 @@
+svacitra
+Copyright © 2026 Fajar Isnanto — Jakarta, Indonesia.
+fajari@gmail.com
+
+Disclaimer
+
+svacitra is provided as is, without warranty. Keep a separate backup of your original photos. Library backups contain edits and catalog information only. When you use cloud AI features, photos and prompts may be sent to your configured provider, and provider charges may apply.
+
+Distributed under the MIT License. See LICENSE for the full terms.

@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Version>2.6.0</Version>
+    <Authors>Fajar Isnanto</Authors>
+    <Company>Fajar Isnanto</Company>
+    <Product>svacitra</Product>
+    <Copyright>Copyright © 2026 Fajar Isnanto — Jakarta, Indonesia.</Copyright>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- CS9057: OpenCvSharp ships an analyzer built for a newer compiler than the .NET 8 SDK; it is just not loaded. -->
+    <NoWarn>$(NoWarn);CS9057</NoWarn>
+  </PropertyGroup>
+</Project>

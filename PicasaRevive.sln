@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PicasaRevive.App", "PicasaRevive.App\PicasaRevive.App.csproj", "{741C239B-A267-4F42-9234-FC37FA3F18A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PicasaRevive.Core", "PicasaRevive.Core\PicasaRevive.Core.csproj", "{5568A1C7-914E-4438-A227-F00C6327DF11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PicasaRevive.Server", "PicasaRevive.Server\PicasaRevive.Server.csproj", "{39818294-AC80-4550-9B35-A4E4EB74401F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PicasaRevive.Tests", "PicasaRevive.Tests\PicasaRevive.Tests.csproj", "{A8EAA892-11F2-4CF4-8AC2-DAC12AED20F6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{741C239B-A267-4F42-9234-FC37FA3F18A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{741C239B-A267-4F42-9234-FC37FA3F18A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{741C239B-A267-4F42-9234-FC37FA3F18A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{741C239B-A267-4F42-9234-FC37FA3F18A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5568A1C7-914E-4438-A227-F00C6327DF11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5568A1C7-914E-4438-A227-F00C6327DF11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5568A1C7-914E-4438-A227-F00C6327DF11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5568A1C7-914E-4438-A227-F00C6327DF11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39818294-AC80-4550-9B35-A4E4EB74401F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39818294-AC80-4550-9B35-A4E4EB74401F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39818294-AC80-4550-9B35-A4E4EB74401F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39818294-AC80-4550-9B35-A4E4EB74401F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8EAA892-11F2-4CF4-8AC2-DAC12AED20F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8EAA892-11F2-4CF4-8AC2-DAC12AED20F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8EAA892-11F2-4CF4-8AC2-DAC12AED20F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8EAA892-11F2-4CF4-8AC2-DAC12AED20F6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

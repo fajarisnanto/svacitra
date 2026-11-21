@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\PicasaRevive.Core\PicasaRevive.Core.csproj" />
+  </ItemGroup>
+
+  <!-- The whole frontend ships inside this assembly: resource names look like "wwwroot/js/app.js". -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\wwwroot\**\*" LinkBase="wwwroot" LogicalName="wwwroot/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PicasaRevive.Tests" />
+  </ItemGroup>
+
+</Project>

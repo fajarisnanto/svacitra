@@ -1,0 +1,256 @@
+/* PICASA PHOTO VIEWER - LIGHTBOX, ZOOM & FILMSTRIP */
+
+.picasa-photo-viewer {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 12, 15, 0.96);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(8px);
+}
+
+/* TOP FLOATING BAR */
+.viewer-top-bar {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.viewer-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.viewer-filename {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.viewer-meta {
+  font-size: 0.78rem;
+  color: #aaa;
+}
+
+.viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer-icon-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #eee;
+  padding: 5px 11px;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.viewer-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.viewer-icon-btn.close-btn {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+  font-weight: bold;
+}
+
+.viewer-icon-btn.close-btn:hover {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+/* VIEWPORT & ZOOM STAGE */
+.viewer-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.viewer-viewport.dragging {
+  cursor: grabbing;
+}
+
+.viewer-viewport img {
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  transition: transform 0.08s ease-out;
+  transform-origin: center center;
+  user-select: none;
+  pointer-events: auto;
+}
+
+/* NAVIGATION CHEVRONS */
+.viewer-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(30, 30, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  width: 44px;
+  height: 64px;
+  border-radius: 6px;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  backdrop-filter: blur(4px);
+  z-index: 5;
+}
+
+.viewer-nav-btn:hover {
+  background: rgba(50, 50, 60, 0.9);
+  width: 48px;
+}
+
+.viewer-nav-btn.prev-btn {
+  left: 20px;
+}
+
+.viewer-nav-btn.next-btn {
+  right: 20px;
+}
+
+/* BOTTOM FLOATING FILMSTRIP */
+.viewer-filmstrip {
+  height: 74px;
+  background: rgba(18, 18, 22, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  overflow-x: auto;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.viewer-filmstrip::-webkit-scrollbar {
+  height: 4px;
+}
+.viewer-filmstrip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.filmstrip-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+}
+
+.filmstrip-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.filmstrip-thumb:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.filmstrip-thumb.active {
+  opacity: 1;
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  transform: scale(1.08);
+}
+
+.filmstrip-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* SLIDESHOW OVERLAY */
+.picasa-slideshow-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+.slideshow-slide {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.slideshow-slide img {
+  max-width: 100vw;
+  max-height: 100vh;
+  object-fit: contain;
+  transition: opacity 0.6s ease-in-out;
+}
+
+.slideshow-controls {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  padding: 6px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  backdrop-filter: blur(8px);
+  opacity: 0.2;
+  transition: opacity 0.2s;
+}
+
+.picasa-slideshow-overlay:hover .slideshow-controls {
+  opacity: 1;
+}
+
+.ss-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.9rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.ss-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
